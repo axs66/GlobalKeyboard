@@ -192,52 +192,16 @@
     if ([firstResponder isKindOfClass:[UITextField class]]) {
         UITextField *textField = (UITextField *)firstResponder;
         if (textField.text.length > 0) {
-            NSRange selectedRange = [self getSelectedRange:textField];
-            if (selectedRange.length > 0) {
-                // 删除选中文本
-                textField.text = [textField.text stringByReplacingCharactersInRange:selectedRange withString:@""];
-            } else if (selectedRange.location > 0) {
-                // 删除前一个字符
-                NSRange deleteRange = NSMakeRange(selectedRange.location - 1, 1);
-                textField.text = [textField.text stringByReplacingCharactersInRange:deleteRange withString:@""];
-                [self setSelectedRange:NSMakeRange(deleteRange.location, 0) forTextField:textField];
-            }
+            // 简单实现：删除最后一个字符
+            textField.text = [textField.text substringToIndex:textField.text.length - 1];
         }
     } else if ([firstResponder isKindOfClass:[UITextView class]]) {
         UITextView *textView = (UITextView *)firstResponder;
         if (textView.text.length > 0) {
-            NSRange selectedRange = textView.selectedRange;
-            if (selectedRange.length > 0) {
-                // 删除选中文本
-                textView.text = [textView.text stringByReplacingCharactersInRange:selectedRange withString:@""];
-                textView.selectedRange = NSMakeRange(selectedRange.location, 0);
-            } else if (selectedRange.location > 0) {
-                // 删除前一个字符
-                NSRange deleteRange = NSMakeRange(selectedRange.location - 1, 1);
-                textView.text = [textView.text stringByReplacingCharactersInRange:deleteRange withString:@""];
-                textView.selectedRange = NSMakeRange(deleteRange.location, 0);
-            }
+            // 简单实现：删除最后一个字符
+            textView.text = [textView.text substringToIndex:textView.text.length - 1];
         }
     }
-}
-
-- (NSRange)getSelectedRange:(UITextField *)textField {
-    UITextPosition *beginning = textField.beginningOfDocument;
-    UITextPosition *start = textField.selectedTextRange.start;
-    UITextPosition *end = textField.selectedTextRange.end;
-    
-    NSInteger location = [textField offsetFromPosition:beginning toPosition:start];
-    NSInteger length = [textField offsetFromPosition:start toPosition:end];
-    
-    return NSMakeRange(location, length);
-}
-
-- (void)setSelectedRange:(NSRange)range forTextField:(UITextField *)textField {
-    UITextPosition *beginning = textField.beginningOfDocument;
-    UITextPosition *start = [textField positionFromPosition:beginning offset:range.location];
-    UITextPosition *end = [textField positionFromPosition:start offset:range.length];
-    UITextRange *textRange = [textField textRangeFromPosition:start toPosition:end];
-    textField.selectedTextRange = textRange;
 }
 
 - (UIResponder *)findFirstResponder {
@@ -246,35 +210,24 @@
 }
 
 - (UIWindow *)getKeyWindow {
-    // iOS 15+ 兼容的方式获取 key window
     UIWindow *keyWindow = nil;
     
-    NSSet<UIScene *> *connectedScenes = [UIApplication sharedApplication].connectedScenes;
-    for (UIScene *scene in connectedScenes) {
-        if ([scene isKindOfClass:[UIWindowScene class]] && scene.activationState == UISceneActivationStateForegroundActive) {
-            UIWindowScene *windowScene = (UIWindowScene *)scene;
-            for (UIWindow *window in windowScene.windows) {
-                if (window.isKeyWindow) {
-                    keyWindow = window;
-                    break;
-                }
-            }
-            if (keyWindow) break;
-        }
-    }
-    
-    // 如果没有找到 key window，使用第一个窗口
-    if (!keyWindow) {
+    if (@available(iOS 13.0, *)) {
+        NSSet<UIScene *> *connectedScenes = [UIApplication sharedApplication].connectedScenes;
         for (UIScene *scene in connectedScenes) {
-            if ([scene isKindOfClass:[UIWindowScene class]]) {
+            if ([scene isKindOfClass:[UIWindowScene class]] && scene.activationState == UISceneActivationStateForegroundActive) {
                 UIWindowScene *windowScene = (UIWindowScene *)scene;
-                keyWindow = windowScene.windows.firstObject;
-                break;
+                for (UIWindow *window in windowScene.windows) {
+                    if (window.isKeyWindow) {
+                        keyWindow = window;
+                        break;
+                    }
+                }
+                if (keyWindow) break;
             }
         }
     }
     
-    // 最后尝试使用 windows 数组
     if (!keyWindow) {
         keyWindow = [UIApplication sharedApplication].windows.firstObject;
     }
@@ -313,8 +266,8 @@
         
         CGFloat minX = 0;
         CGFloat maxX = screenBounds.size.width - keyboardFrame.size.width;
-        CGFloat minY = 100; // 距离顶部最小距离
-        CGFloat maxY = screenBounds.size.height - 100; // 距离底部最小距离
+        CGFloat minY = 100;
+        CGFloat maxY = screenBounds.size.height - 100;
         
         CGRect newFrame = keyboardFrame;
         newFrame.origin.x = MAX(minX, MIN(newFrame.origin.x, maxX));
@@ -341,14 +294,9 @@
     _isVisible = YES;
     
     self.keyboardView.transform = CGAffineTransformMakeScale(0.1, 0.1);
-    [UIView animateWithDuration:0.3 
-                          delay:0 
-         usingSpringWithDamping:0.7 
-          initialSpringVelocity:0.5 
-                        options:UIViewAnimationOptionCurveEaseOut 
-                     animations:^{
+    [UIView animateWithDuration:0.3 animations:^{
         self.keyboardView.transform = CGAffineTransformIdentity;
-    } completion:nil];
+    }];
 }
 
 - (void)hideKeyboard {
