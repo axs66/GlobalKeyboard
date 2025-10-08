@@ -1,9 +1,10 @@
-Package: com.axs.keyboardmodule
-Name: KeyBoardModule
+Package: com.axs.globalkeyboard
+Name: globalkeyboard
 Version: 1.0.0
 Architecture: iphoneos-arm
-Description: 为键盘添加自定义按钮（支持动态注册）
+Description: 全局浮动键盘工具，支持全选、剪切、复制、粘贴、撤销、重做、删除功能
 Maintainer: Axs
 Author: Axs
 Section: Tweaks
-Depends: mobilesubstrate
+Depends:mobilesubstrate (>= 0.9.5000), firmware (>= 13.0)
+Icon: file:///Library/PreferenceBundles/GlobalKeyboard.bundle/icon.png
