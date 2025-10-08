@@ -8,8 +8,6 @@ typedef NS_ENUM(NSInteger, GKButtonType) {
     GKButtonTypeCut,        // 剪切
     GKButtonTypeCopy,       // 复制
     GKButtonTypePaste,      // 粘贴
-    GKButtonTypeUndo,       // 撤销
-    GKButtonTypeRedo,       // 重做
     GKButtonTypeDelete,     // 删除
     GKButtonTypeClose       // 关闭
 };
