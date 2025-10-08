@@ -1,5 +1,0 @@
-{
-    Filter = {
-        Bundles = ("com.tencent.xin"); // 微信 bundle ID
-    };
-}
