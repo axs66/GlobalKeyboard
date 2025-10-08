@@ -57,9 +57,10 @@
 - (void)setupKeyboardWindow {
     CGRect screenBounds = [UIScreen mainScreen].bounds;
     CGFloat keyboardHeight = 70.0f;
-    CGRect keyboardFrame = CGRectMake(screenBounds.size.width/2 - 200, 
-                                     screenBounds.size.height - 150, 
-                                     400, keyboardHeight);
+    
+    // 在屏幕底部居中显示
+    CGRect keyboardFrame = CGRectMake(20, screenBounds.size.height - keyboardHeight - 50, 
+                                     screenBounds.size.width - 40, keyboardHeight);
     
     self.keyboardWindow = [[UIWindow alloc] initWithFrame:keyboardFrame];
     self.keyboardWindow.windowLevel = UIWindowLevelStatusBar + 1000;
@@ -69,7 +70,7 @@
     self.keyboardWindow.layer.cornerRadius = 15.0f;
     self.keyboardWindow.clipsToBounds = YES;
     
-    self.keyboardView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 400, keyboardHeight)];
+    self.keyboardView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, keyboardFrame.size.width, keyboardHeight)];
     self.keyboardView.backgroundColor = [UIColor colorWithWhite:0.1 alpha:0.9];
     self.keyboardView.layer.cornerRadius = 15.0f;
     self.keyboardView.clipsToBounds = YES;
@@ -81,7 +82,7 @@
     [self.keyboardView addSubview:blurView];
     
     // 按钮堆栈
-    self.buttonStack = [[UIStackView alloc] initWithFrame:CGRectMake(10, 10, 380, 50)];
+    self.buttonStack = [[UIStackView alloc] initWithFrame:CGRectMake(10, 10, keyboardFrame.size.width - 20, 50)];
     self.buttonStack.axis = UILayoutConstraintAxisHorizontal;
     self.buttonStack.distribution = UIStackViewDistributionFillEqually;
     self.buttonStack.spacing = 6.0f;
@@ -105,16 +106,28 @@
     UIButton *button = [UIButton buttonWithType:UIButtonTypeSystem];
     button.translatesAutoresizingMaskIntoConstraints = NO;
     
-    [button setImage:[UIImage systemImageNamed:buttonInfo.iconName] forState:UIControlStateNormal];
-    [button setTitle:buttonInfo.title forState:UIControlStateNormal];
+    // 为 iOS 16.5 使用兼容的按钮配置
+    if (@available(iOS 15.0, *)) {
+        // iOS 15+ 使用新 API
+        UIButtonConfiguration *config = [UIButtonConfiguration plainButtonConfiguration];
+        config.image = [UIImage systemImageNamed:buttonInfo.iconName];
+        config.title = buttonInfo.title;
+        config.imagePlacement = NSDirectionalRectEdgeTop;
+        config.imagePadding = 4.0f;
+        config.titleAlignment = UIButtonConfigurationTitleAlignmentCenter;
+        button.configuration = config;
+    } else {
+        // iOS 14 及以下使用传统方法
+        [button setImage:[UIImage systemImageNamed:buttonInfo.iconName] forState:UIControlStateNormal];
+        [button setTitle:buttonInfo.title forState:UIControlStateNormal];
+        
+        // 使用自动布局来实现垂直排列
+        button.contentHorizontalAlignment = UIControlContentHorizontalAlignmentCenter;
+        button.contentVerticalAlignment = UIControlContentVerticalAlignmentCenter;
+    }
+    
     [button setTintColor:[UIColor whiteColor]];
     button.titleLabel.font = [UIFont systemFontOfSize:9];
-    
-    // 垂直排列
-    button.contentHorizontalAlignment = UIControlContentHorizontalAlignmentCenter;
-    button.contentVerticalAlignment = UIControlContentVerticalAlignmentCenter;
-    button.imageEdgeInsets = UIEdgeInsetsMake(0, 0, 12, 0);
-    button.titleEdgeInsets = UIEdgeInsetsMake(25, -25, 0, 0);
     
     button.backgroundColor = [UIColor colorWithWhite:1.0 alpha:0.2];
     button.layer.cornerRadius = 8.0f;
@@ -124,8 +137,8 @@
     [button addTarget:self action:@selector(handleButtonTap:) forControlEvents:UIControlEventTouchUpInside];
     
     [NSLayoutConstraint activateConstraints:@[
-        [button.widthAnchor constraintEqualToConstant:40],
-        [button.heightAnchor constraintEqualToConstant:40]
+        [button.widthAnchor constraintEqualToConstant:50],
+        [button.heightAnchor constraintEqualToConstant:50]
     ]];
     
     return button;
@@ -192,43 +205,52 @@
     if ([firstResponder isKindOfClass:[UITextField class]]) {
         UITextField *textField = (UITextField *)firstResponder;
         if (textField.text.length > 0) {
-            // 简单实现：删除最后一个字符
             textField.text = [textField.text substringToIndex:textField.text.length - 1];
         }
     } else if ([firstResponder isKindOfClass:[UITextView class]]) {
         UITextView *textView = (UITextView *)firstResponder;
         if (textView.text.length > 0) {
-            // 简单实现：删除最后一个字符
             textView.text = [textView.text substringToIndex:textView.text.length - 1];
         }
     }
 }
 
 - (UIResponder *)findFirstResponder {
+    // iPhone 简化的窗口获取方式
     UIWindow *keyWindow = [self getKeyWindow];
     return [self findFirstResponderInView:keyWindow];
 }
 
 - (UIWindow *)getKeyWindow {
+    // 针对 iPhone 的简化窗口获取
+    // 在 iPhone 上，通常只有一个 keyWindow
     UIWindow *keyWindow = nil;
     
+    // 首先尝试获取 keyWindow
     if (@available(iOS 13.0, *)) {
         NSSet<UIScene *> *connectedScenes = [UIApplication sharedApplication].connectedScenes;
         for (UIScene *scene in connectedScenes) {
-            if ([scene isKindOfClass:[UIWindowScene class]] && scene.activationState == UISceneActivationStateForegroundActive) {
+            if ([scene isKindOfClass:[UIWindowScene class]]) {
                 UIWindowScene *windowScene = (UIWindowScene *)scene;
                 for (UIWindow *window in windowScene.windows) {
                     if (window.isKeyWindow) {
-                        keyWindow = window;
-                        break;
+                        return window;
                     }
                 }
-                if (keyWindow) break;
+                // 如果没有 keyWindow，返回第一个窗口
+                return windowScene.windows.firstObject;
             }
         }
     }
     
+    // 备用方案：使用传统方式
+    #pragma clang diagnostic push
+    #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+    keyWindow = [UIApplication sharedApplication].keyWindow;
+    #pragma clang diagnostic pop
+    
     if (!keyWindow) {
+        // 最后备选
         keyWindow = [UIApplication sharedApplication].windows.firstObject;
     }
     
@@ -260,7 +282,7 @@
         self.keyboardView.center = CGPointMake(originalCenter.x + translation.x, 
                                              originalCenter.y + translation.y);
     } else if (gesture.state == UIGestureRecognizerStateEnded) {
-        // 边界检查
+        // 简单的边界检查，确保键盘不会移出屏幕
         CGRect screenBounds = [UIScreen mainScreen].bounds;
         CGRect keyboardFrame = self.keyboardWindow.frame;
         
