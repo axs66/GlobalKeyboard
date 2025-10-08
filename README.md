@@ -1,24 +1,37 @@
-# KeyBoardModule
+GlobalKeyboard - 全局浮动键盘插件
+📱 项目简介
+GlobalKeyboard 是一个为 iOS 15+ 无根越狱环境开发的全局浮动键盘插件，提供全选、剪切、复制、粘贴、删除等常用文本操作功能，可在所有应用程序中使用。
 
-为 **键盘增强助手** 注册自定义快捷按钮的模块。
+✨ 功能特性
+🔧 核心功能
+全选 - 快速选中所有文本
 
-## ✨ 功能
-- 动态注册自定义按钮
-- 支持 SF Symbols 图标
-- 自动加载到键盘工具栏
-- 按钮动作由用户类定义
+剪切 - 剪切选中文本
 
-## 🧩 安装
-1. 下载 `.deb` 并使用 Filza 或 Sileo 安装
-2. 打开键盘，查看新增按钮
+复制 - 复制选中文本
 
-## ⚙️ 开发者自定义
-示例注册代码：
-```objc
-[[objc_getClass("KeyBoardButtonManager") sharedInstance]
-    registerButtonWithId:@"hello"
-                    title:@"Hello!"
-                 iconName:@"heart.fill"
-          targetClassName:@"MyNewKeyboardAction"
-           selectorString:@"helloworld"
-           defaultEnabled:YES];
+粘贴 - 粘贴剪贴板内容
+
+删除 - 删除文本内容
+
+关闭 - 隐藏键盘
+
+🎯 交互特性
+摇动切换 - 摇动设备显示/隐藏键盘
+
+拖拽移动 - 长按拖拽改变键盘位置
+
+双击隐藏 - 双击键盘快速隐藏
+
+智能状态 - 根据文本框状态自动启用/禁用按钮
+
+全局生效 - 在所有应用程序中均可使用
+
+📋 系统要求
+设备: iPhone (专为 iPhone 优化)
+
+系统: iOS 15.0 - 16.5+ (已在 iOS 16.5 测试)
+
+越狱: 无根越狱环境 (Dopamine, etc.)
+
+架构: arm64/arm64e
