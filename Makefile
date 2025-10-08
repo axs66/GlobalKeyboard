@@ -7,7 +7,7 @@ include $(THEOS)/makefiles/common.mk
 TWEAK_NAME = GlobalKeyboard
 
 GlobalKeyboard_FILES = Tweak.xm GlobalKeyboardHelper.m
-GlobalKeyboard_CFLAGS = -fobjc-arc
+GlobalKeyboard_CFLAGS = -fobjc-arc -Wno-deprecated-declarations
 GlobalKeyboard_FRAMEWORKS = UIKit Foundation CoreGraphics
 GlobalKeyboard_LDFLAGS = -Wl,-undefined,dynamic_lookup
 
