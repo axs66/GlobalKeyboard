@@ -179,18 +179,12 @@
             }
             break;
         case GKButtonTypeUndo:
-            // 使用UITextInput协议的方法
-            if ([firstResponder conformsToProtocol:@protocol(UITextInput)]) {
-                id<UITextInput> textInput = (id<UITextInput>)firstResponder;
-                [textInput.undoManager undo];
-            }
+            // 使用更安全的方式执行撤销
+            [self performUndoAction];
             break;
         case GKButtonTypeRedo:
-            // 使用UITextInput协议的方法
-            if ([firstResponder conformsToProtocol:@protocol(UITextInput)]) {
-                id<UITextInput> textInput = (id<UITextInput>)firstResponder;
-                [textInput.undoManager redo];
-            }
+            // 使用更安全的方式执行重做
+            [self performRedoAction];
             break;
         case GKButtonTypeDelete:
             // 模拟删除键
@@ -199,6 +193,52 @@
         case GKButtonTypeClose:
             [self hideKeyboard];
             break;
+    }
+}
+
+- (void)performUndoAction {
+    UIResponder *firstResponder = [self findFirstResponder];
+    if (!firstResponder) return;
+    
+    // 尝试多种方式执行撤销
+    if ([firstResponder respondsToSelector:@selector(undoManager)]) {
+        NSUndoManager *undoManager = [firstResponder valueForKey:@"undoManager"];
+        if (undoManager && [undoManager canUndo]) {
+            [undoManager undo];
+        }
+    } else if ([firstResponder isKindOfClass:[UITextField class]]) {
+        UITextField *textField = (UITextField *)firstResponder;
+        if ([textField.undoManager canUndo]) {
+            [textField.undoManager undo];
+        }
+    } else if ([firstResponder isKindOfClass:[UITextView class]]) {
+        UITextView *textView = (UITextView *)firstResponder;
+        if ([textView.undoManager canUndo]) {
+            [textView.undoManager undo];
+        }
+    }
+}
+
+- (void)performRedoAction {
+    UIResponder *firstResponder = [self findFirstResponder];
+    if (!firstResponder) return;
+    
+    // 尝试多种方式执行重做
+    if ([firstResponder respondsToSelector:@selector(undoManager)]) {
+        NSUndoManager *undoManager = [firstResponder valueForKey:@"undoManager"];
+        if (undoManager && [undoManager canRedo]) {
+            [undoManager redo];
+        }
+    } else if ([firstResponder isKindOfClass:[UITextField class]]) {
+        UITextField *textField = (UITextField *)firstResponder;
+        if ([textField.undoManager canRedo]) {
+            [textField.undoManager redo];
+        }
+    } else if ([firstResponder isKindOfClass:[UITextView class]]) {
+        UITextView *textView = (UITextView *)firstResponder;
+        if ([textView.undoManager canRedo]) {
+            [textView.undoManager redo];
+        }
     }
 }
 
@@ -259,7 +299,13 @@
 
 - (UIResponder *)findFirstResponder {
     // 使用兼容的方式获取key window
+    UIWindow *keyWindow = [self getKeyWindow];
+    return [self findFirstResponderInView:keyWindow];
+}
+
+- (UIWindow *)getKeyWindow {
     UIWindow *keyWindow = nil;
+    
     if (@available(iOS 13.0, *)) {
         NSSet<UIScene *> *connectedScenes = [UIApplication sharedApplication].connectedScenes;
         for (UIScene *scene in connectedScenes) {
@@ -274,6 +320,7 @@
                 if (keyWindow) break;
             }
         }
+        
         // 如果没有找到key window，使用第一个窗口
         if (!keyWindow) {
             for (UIScene *scene in connectedScenes) {
@@ -285,15 +332,28 @@
             }
         }
     } else {
+        // 对于 iOS 12 及以下版本
+        #pragma clang diagnostic push
+        #pragma clang diagnostic ignored "-Wdeprecated-declarations"
         keyWindow = [UIApplication sharedApplication].keyWindow;
+        #pragma clang diagnostic pop
     }
     
+    // 最后尝试使用windows数组
     if (!keyWindow) {
-        // 最后尝试使用windows数组
-        keyWindow = [UIApplication sharedApplication].windows.firstObject;
+        NSArray<UIWindow *> *windows = [UIApplication sharedApplication].windows;
+        for (UIWindow *window in windows) {
+            if (window.isKeyWindow) {
+                keyWindow = window;
+                break;
+            }
+        }
+        if (!keyWindow) {
+            keyWindow = windows.firstObject;
+        }
     }
     
-    return [self findFirstResponderInView:keyWindow];
+    return keyWindow;
 }
 
 - (UIResponder *)findFirstResponderInView:(UIView *)view {
@@ -404,6 +464,24 @@
         hasText = textView.text.length > 0;
     }
     
+    // 检查撤销/重做状态
+    BOOL canUndo = NO;
+    BOOL canRedo = NO;
+    
+    if ([firstResponder respondsToSelector:@selector(undoManager)]) {
+        NSUndoManager *undoManager = [firstResponder valueForKey:@"undoManager"];
+        canUndo = undoManager.canUndo;
+        canRedo = undoManager.canRedo;
+    } else if ([firstResponder isKindOfClass:[UITextField class]]) {
+        UITextField *textField = (UITextField *)firstResponder;
+        canUndo = textField.undoManager.canUndo;
+        canRedo = textField.undoManager.canRedo;
+    } else if ([firstResponder isKindOfClass:[UITextView class]]) {
+        UITextView *textView = (UITextView *)firstResponder;
+        canUndo = textView.undoManager.canUndo;
+        canRedo = textView.undoManager.canRedo;
+    }
+    
     for (UIView *view in self.buttonStack.arrangedSubviews) {
         if ([view isKindOfClass:[UIButton class]]) {
             UIButton *button = (UIButton *)view;
@@ -421,6 +499,12 @@
                         break;
                     case GKButtonTypePaste:
                         shouldEnable = canPaste;
+                        break;
+                    case GKButtonTypeUndo:
+                        shouldEnable = canUndo;
+                        break;
+                    case GKButtonTypeRedo:
+                        shouldEnable = canRedo;
                         break;
                     case GKButtonTypeClose:
                         shouldEnable = YES;
