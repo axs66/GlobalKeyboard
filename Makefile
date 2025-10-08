@@ -1,15 +1,15 @@
 ARCHS = arm64 arm64e
-TARGET = iphone:clang:latest:16.0
-INSTALL_TARGET_PROCESSES = WeChat Preferences
+TARGET = iphone:clang:latest:13.0
+INSTALL_TARGET_PROCESSES = SpringBoard
 
 include $(THEOS)/makefiles/common.mk
 
-TWEAK_NAME = KeyBoardModule
+TWEAK_NAME = GlobalKeyboard
 
-KeyBoardModule_FILES = Tweak.xm
-KeyBoardModule_CFLAGS = -fobjc-arc
+GlobalKeyboard_FILES = Tweak.xm GlobalKeyboardHelper.m
+GlobalKeyboard_CFLAGS = -fobjc-arc
+GlobalKeyboard_FRAMEWORKS = UIKit Foundation CoreGraphics
+GlobalKeyboard_PRIVATE_FRAMEWORKS = SpringBoard
+GlobalKeyboard_EXTRA_FRAMEWORKS = Cephei
 
-include $(THEOS_MAKE_PATH)/tweak.mk
-
-after-install::
-	install.exec "killall -9 WeChat || true"
+include $(THEOS)/makefiles/tweak.mk
