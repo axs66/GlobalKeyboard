@@ -1,0 +1,9 @@
+Package: com.axs.keyboardmodule
+Name: KeyBoardModule
+Version: 1.0.0
+Architecture: iphoneos-arm
+Description: 为黄白键盘添加自定义按钮（支持动态注册）
+Maintainer: Axs
+Author: Axs
+Section: Tweaks
+Depends: mobilesubstrate
