@@ -1,12 +1,4 @@
-name: Build and Release Tweak
 
-permissions:
-    contents: write
-
-on:
-    push:
-        branches:
-            - main
 jobs:
     cleanup:
         runs-on: macos-latest
